@@ -301,10 +301,8 @@ class BackupJob
             }
 
             if ($key === 'mysql_dump_without_logs') {
-                //$dbDumper->excludeTables(array_merge($logs_tables, $mysql_view_tables));
+                $dbDumper->excludeTables(array_merge($logs_tables, $mysql_view_tables));
             }
-
-            $dbDumper->includeTables(['users']);
 
             consoleOutput()->info("Dumping database {$dbDumper->getDbName()} with connection ({$key})...");
 
