@@ -5,6 +5,8 @@ namespace Spatie\Backup\Tasks\Backup;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Spatie\Backup\BackupDestination\BackupDestination;
 use Spatie\Backup\Events\BackupHasFailed;
 use Spatie\Backup\Events\BackupManifestWasCreated;
@@ -39,6 +41,9 @@ class BackupJob
     /** @var bool */
     protected $sendNotifications = true;
 
+    /** @var bool */
+    protected $sanitized = false;
+
     public function __construct()
     {
         $this->dontBackupFilesystem();
@@ -51,6 +56,13 @@ class BackupJob
     public function dontBackupFilesystem(): self
     {
         $this->fileSelection = FileSelection::create();
+
+        return $this;
+    }
+
+    public function setSanitized(): self
+    {
+        $this->sanitized = true;
 
         return $this;
     }
@@ -226,14 +238,69 @@ class BackupJob
      */
     protected function dumpDatabases(): array
     {
-        return $this->dbDumpers->map(function (DbDumper $dbDumper, $key) {
-            consoleOutput()->info("Dumping database {$dbDumper->getDbName()}...");
+        $logs_tables = [
+            'auth_log',
+
+            'queue_error_log',
+            'query_slow_log',
+            'gc_log_queues',
+
+            'union_logs',
+            'union_logs_items',
+            'union_logs_actions',
+            'union_logs_parents',
+            'union_logs_data_changed',
+
+            'telescope_entries',
+            'telescope_monitoring',
+            'telescope_entries_tags',
+
+            'z_log',
+            'z_mrp_log',
+            'z_dpth_log',
+            'z_dpj_log',
+            'z_mrp_log',
+            'z_members_log',
+            'z_reports_log',
+            'z_payments_log',
+        ];
+
+        foreach ($logs_tables as $key => $table) {
+            if (!Schema::hasTable($table)) {
+                unset($logs_tables[$key]);
+            }
+        }
+
+
+        return $this->dbDumpers->map(function (DbDumper $dbDumper, $key) use ($logs_tables) {
+            $db_name = $dbDumper->getDbName();
+            $mysql_view_tables = collect(
+                DB::select("SHOW FULL TABLES IN {$db_name} WHERE TABLE_TYPE LIKE 'VIEW'")
+            )
+                ->pluck("Tables_in_{$db_name}")
+                ->toArray();
+
+            if ($key === 'mysql') {
+                $dbDumper->excludeTables($mysql_view_tables);
+            }
+
+            if ($key === 'mysql_dump_only_logs') {
+                $dbDumper->includeTables($logs_tables);
+            }
+
+            if ($key === 'mysql_dump_without_logs') {
+                $dbDumper->excludeTables(array_merge($logs_tables, $mysql_view_tables));
+            }
+
+            consoleOutput()->info("Dumping database {$dbDumper->getDbName()} with connection ({$key})...");
 
             $dbType = mb_strtolower(basename(str_replace('\\', '/', get_class($dbDumper))));
 
             $dbName = $dbDumper->getDbName();
             if ($dbDumper instanceof Sqlite) {
                 $dbName = $key.'-database';
+            } else {
+                $dbName .= '-' . $key;
             }
 
             $fileName = "{$dbType}-{$dbName}.{$this->getExtension($dbDumper)}";
@@ -249,6 +316,13 @@ class BackupJob
             }
 
             $temporaryFilePath = $this->temporaryDirectory->path('db-dumps'.DIRECTORY_SEPARATOR.$fileName);
+
+            if ($this->sanitized) {
+                $dbDumper->setDumpBinaryPath('vendor/bin');
+                $dbDumper->addExtraOption('--gdpr-replacements-file="dump_sinitized.json"');
+
+                $dbDumper->setSanitized();
+            }
 
             $dbDumper->dumpToFile($temporaryFilePath);
 

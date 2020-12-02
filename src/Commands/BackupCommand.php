@@ -3,6 +3,7 @@
 namespace Spatie\Backup\Commands;
 
 use Exception;
+use Khill\Duration\Duration;
 use Spatie\Backup\Events\BackupHasFailed;
 use Spatie\Backup\Exceptions\InvalidCommand;
 use Spatie\Backup\Tasks\Backup\BackupJobFactory;
@@ -10,7 +11,16 @@ use Spatie\Backup\Tasks\Backup\BackupJobFactory;
 class BackupCommand extends BaseCommand
 {
     /** @var string */
-    protected $signature = 'backup:run {--filename=} {--only-db} {--db-name=*} {--only-files} {--only-to-disk=} {--disable-notifications} {--timeout=}';
+    protected $signature = 'backup:run
+        {--filename=}
+        {--only-db}
+        {--db-name=*}
+        {--only-files}
+        {--only-to-disk=}
+        {--disable-notifications}
+        {--timeout=}
+        {--sanitized}
+    ';
 
     /** @var string */
     protected $description = 'Run the backup.';
@@ -18,6 +28,7 @@ class BackupCommand extends BaseCommand
     public function handle()
     {
         consoleOutput()->comment('Starting backup...');
+        $start_time = microtime(true);
 
         $disableNotifications = $this->option('disable-notifications');
 
@@ -29,6 +40,10 @@ class BackupCommand extends BaseCommand
             $this->guardAgainstInvalidOptions();
 
             $backupJob = BackupJobFactory::createFromArray(config('backup'));
+
+            if ($this->option('sanitized')) {
+                $backupJob->setSanitized();
+            }
 
             if ($this->option('only-db')) {
                 $backupJob->dontBackupFilesystem();
@@ -55,7 +70,13 @@ class BackupCommand extends BaseCommand
 
             $backupJob->run();
 
+            $time_duration = microtime(true) - $start_time;
+
+            $duration = new Duration((int) $time_duration);
+
             consoleOutput()->comment('Backup completed!');
+            consoleOutput()->comment('Time: ' . $duration->humanize());
+
         } catch (Exception $exception) {
             consoleOutput()->error("Backup failed because: {$exception->getMessage()}.");
 
