@@ -19,6 +19,10 @@
     ],
     "repositories": [
         {
+            "type": "composer",
+            "url": "https://packages.cartalyst.com"
+        },
+        {
             "type": "vcs",
             "url": "https://github.com/GetCodeDev/db-dumper"
         }
