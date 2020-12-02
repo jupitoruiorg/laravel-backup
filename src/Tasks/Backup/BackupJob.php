@@ -315,11 +315,13 @@ class BackupJob
                 $dbName .= '-' . $key;
             }
 
-            $fileName = "{$dbType}-{$dbName}.{$this->getExtension($dbDumper)}";
+            $fileName = "{$dbType}-{$dbName}";
 
             if ($this->sanitized) {
                 $fileName .= ".sanitized";
             }
+
+            $fileName .= ".{$this->getExtension($dbDumper)}";
 
             if (config('backup.backup.gzip_database_dump')) {
                 $dbDumper->useCompressor(new GzipCompressor());
