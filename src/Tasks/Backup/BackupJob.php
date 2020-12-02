@@ -64,7 +64,19 @@ class BackupJob
     {
         $this->sanitized = true;
 
+        $this->changeFilenameWithSanitized();
+
         return $this;
+    }
+
+    protected function changeFilenameWithSanitized()
+    {
+        $filename = $this->filename;
+        $file_data = explode('.', $filename);
+        $inserted = ['sanitized'];
+        array_splice( $file_data, count($file_data) - 1, 0, $inserted );
+
+        $this->filename = implode('.', $file_data);
     }
 
     public function onlyDbName(array $allowedDbNames): self
@@ -289,8 +301,10 @@ class BackupJob
             }
 
             if ($key === 'mysql_dump_without_logs') {
-                $dbDumper->excludeTables(array_merge($logs_tables, $mysql_view_tables));
+                //$dbDumper->excludeTables(array_merge($logs_tables, $mysql_view_tables));
             }
+
+            $dbDumper->includeTables(['users']);
 
             consoleOutput()->info("Dumping database {$dbDumper->getDbName()} with connection ({$key})...");
 
@@ -304,6 +318,10 @@ class BackupJob
             }
 
             $fileName = "{$dbType}-{$dbName}.{$this->getExtension($dbDumper)}";
+
+            if ($this->sanitized) {
+                $fileName .= ".sanitized";
+            }
 
             if (config('backup.backup.gzip_database_dump')) {
                 $dbDumper->useCompressor(new GzipCompressor());
@@ -319,7 +337,7 @@ class BackupJob
 
             if ($this->sanitized) {
                 $dbDumper->setDumpBinaryPath('vendor/bin');
-                $dbDumper->addExtraOption('--gdpr-replacements-file="dump_sinitized.json"');
+                $dbDumper->addExtraOption('--gdpr-replacements-file="dump_sanitized.json"');
 
                 $dbDumper->setSanitized();
             }

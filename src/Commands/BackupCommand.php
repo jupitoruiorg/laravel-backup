@@ -41,13 +41,10 @@ class BackupCommand extends BaseCommand
 
             $backupJob = BackupJobFactory::createFromArray(config('backup'));
 
-            if ($this->option('sanitized')) {
-                $backupJob->setSanitized();
-            }
-
             if ($this->option('only-db')) {
                 $backupJob->dontBackupFilesystem();
             }
+
             if ($this->option('db-name')) {
                 $backupJob->onlyDbName($this->option('db-name'));
             }
@@ -62,6 +59,10 @@ class BackupCommand extends BaseCommand
 
             if ($this->option('filename')) {
                 $backupJob->setFilename($this->option('filename'));
+            }
+
+            if ($this->option('sanitized')) {
+                $backupJob->setSanitized();
             }
 
             if ($disableNotifications) {
