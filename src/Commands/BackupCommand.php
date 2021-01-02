@@ -20,6 +20,8 @@ class BackupCommand extends BaseCommand
         {--disable-notifications}
         {--timeout=}
         {--sanitized}
+        {--filter-week=}
+        {--filter-month=}
     ';
 
     /** @var string */
@@ -63,6 +65,14 @@ class BackupCommand extends BaseCommand
 
             if ($this->option('sanitized')) {
                 $backupJob->setSanitized();
+            }
+
+            if ($this->option('filter-week')) {
+                $backupJob->setFilterWeek($this->option('filter-week'));
+            }
+
+            if ($this->option('filter-month')) {
+                $backupJob->setFilterMonth($this->option('filter-month'));
             }
 
             if ($disableNotifications) {

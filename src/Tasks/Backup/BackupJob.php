@@ -44,6 +44,18 @@ class BackupJob
     /** @var bool */
     protected $sanitized = false;
 
+    /** @var bool */
+    protected $filter_week = false;
+
+    /** @var bool */
+    protected $filter_month = false;
+
+    /** @var null  */
+    protected $filter_start_date = null;
+
+    /** @var null  */
+    protected $filter_end_date = null;
+
     public function __construct()
     {
         $this->dontBackupFilesystem();
@@ -67,6 +79,72 @@ class BackupJob
         $this->changeFilenameWithSanitized();
 
         return $this;
+    }
+
+    /**
+     * @param $filter_week
+     *
+     * @return $this
+     */
+    public function setFilterWeek($filter_week)
+    {
+        $this->filter_week = true;
+
+        $day = Carbon::parse($filter_week);
+
+        $this->filter_start_date = $day->startOfWeek()->toDateString();
+        $this->filter_end_date = $day->endOfWeek()->toDateString();
+
+        return $this;
+    }
+
+    public function getFilterWeek(): bool
+    {
+        return $this->filter_week;
+    }
+
+    /**
+     * @param $filter_month
+     *
+     * @return $this
+     */
+    public function setFilterMonth($filter_month)
+    {
+        $this->filter_month = true;
+
+        $day = Carbon::parse($filter_month);
+
+        $this->filter_start_date = $day->startOfMonth()->toDateString();
+        $this->filter_end_date = $day->endOfMonth()->toDateString();
+
+        return $this;
+    }
+
+
+    /**
+     * @return string
+     */
+    public function getFilterMonth(): bool
+    {
+        return $this->filter_month;
+    }
+
+
+    /**
+     * @return string
+     */
+    public function getFilterStartDate(): string
+    {
+        return $this->filter_start_date;
+    }
+
+
+    /**
+     * @return string
+     */
+    public function getFilterEndDate(): string
+    {
+        return $this->filter_end_date;
     }
 
     protected function changeFilenameWithSanitized()
@@ -302,6 +380,18 @@ class BackupJob
 
             if ($key === 'mysql_dump_without_logs') {
                 $dbDumper->excludeTables(array_merge($logs_tables, $mysql_view_tables));
+            }
+
+            if ($this->getFilterWeek()) {
+                $dbDumper->setFilterWeek();
+                $dbDumper->setFilterStartDate($this->getFilterStartDate());
+                $dbDumper->setFilterEndDate($this->getFilterEndDate());
+            }
+
+            if ($this->getFilterMonth()) {
+                $dbDumper->setFilterMonth();
+                $dbDumper->setFilterStartDate($this->getFilterStartDate());
+                $dbDumper->setFilterEndDate($this->getFilterEndDate());
             }
 
             consoleOutput()->info("Dumping database {$dbDumper->getDbName()} with connection ({$key})...");
