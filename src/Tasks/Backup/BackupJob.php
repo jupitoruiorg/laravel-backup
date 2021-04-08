@@ -392,7 +392,17 @@ class BackupJob
                 $dbName = $key.'-database';
             }
 
-            $fileName = "{$dbName}";
+            if (
+                $key === 'mysql_logs' && $this->getFilterMonth()
+            ) {
+                $fileName = (new Carbon($this->getFilterStartDate()))->format('Y-m');
+            } elseif (
+                $key === 'mysql_logs' && $this->getFilterWeek()
+            ) {
+                $fileName = $this->getFilterStartDate();
+            } else {
+                $fileName = "{$dbName}";
+            }
 
             if ($key === 'mysql' && !$this->sanitized) {
                 $this->onlyBackupTo('s3_backups');
@@ -413,6 +423,7 @@ class BackupJob
                 $dbDumper->useCompressor(new $compressor());
                 $fileName .= '.'.$dbDumper->getCompressorExtension();
             }
+
 
             $temporaryFilePath = $this->temporaryDirectory->path('db-dumps'.DIRECTORY_SEPARATOR.$fileName);
 
@@ -448,6 +459,18 @@ class BackupJob
     {
         $this->backupDestinations->each(function (BackupDestination $backupDestination) use ($path) {
             try {
+
+                if ($backupDestination->diskName() === 's3_backups_logs' && $this->getFilterMonth()) {
+                    $backupDestination->appendBackupName('monthly');
+                }
+
+                if ($backupDestination->diskName() === 's3_backups_logs' && $this->getFilterWeek()) {
+                    $backupDestination->appendBackupName('weekly');
+                }
+
+                if ($backupDestination->diskName() === 's3_backups_logs' && !$this->getFilterWeek() && !$this->getFilterMonth()) {
+                    $backupDestination->appendBackupName('full');
+                }
 
                 consoleOutput()->info("Copying zip to disk named {$backupDestination->diskName()}...");
 

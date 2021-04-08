@@ -31,22 +31,40 @@ class BackupDestination
 
         $this->diskName = $diskName;
 
+        $this->setBackupName($backupName);
+    }
+
+    protected function setBackupName(string $backupName)
+    {
         $backup_destination = '';
+
         $host = gethostname();
 
-        if ($host === 'unionimpact') {
+        /**
+         * If we are on DO GetCode server
+         */
+        if (!app()->environment('production') && $host === 'unionimpact') {
             $backup_destination .= app()->environment()
                 . DIRECTORY_SEPARATOR
                 . explode(' ', exec('hostname -I'))[0]
                 . DIRECTORY_SEPARATOR;
-        } else {
+
+            /**
+             * If we are on local computer
+             */
+        } elseif (!app()->environment('production')) {
             $backup_destination .= app()->environment()
                 . DIRECTORY_SEPARATOR
                 . $host
                 . DIRECTORY_SEPARATOR;
         }
 
-        $backup_destination .= preg_replace('/[^a-zA-Z0-9.]/', '-', $backupName);
+        /**
+         * If we are not on live server
+         */
+        if (!app()->environment('production')) {
+            $backup_destination .= preg_replace('/[^a-zA-Z0-9.]/', '-', $backupName);
+        }
 
         $this->backupName = $backup_destination;
     }
@@ -113,6 +131,11 @@ class BackupDestination
     public function backupName(): string
     {
         return $this->backupName;
+    }
+
+    public function appendBackupName(string $folder)
+    {
+        $this->backupName .= DIRECTORY_SEPARATOR . $folder;
     }
 
     public function backups(): BackupCollection
