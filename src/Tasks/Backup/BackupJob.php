@@ -433,6 +433,19 @@ class BackupJob
                 $dbDumper->setSanitized();
             }
 
+            if (
+                $key === 'mysql_logs'
+                &&
+                (
+                    $this->getFilterWeek()
+                    ||
+                    $this->getFilterMonth()
+                )
+            ) {
+                $dbDumper->includeTables(array_diff($logs_tables, $mysql_view_tables));
+                $dbDumper->doNotCreateTables();
+            }
+
             $dbDumper->dumpToFile($temporaryFilePath);
 
             if (
@@ -444,9 +457,6 @@ class BackupJob
                     $this->getFilterMonth()
                 )
             ) {
-                $dbDumper->includeTables($logs_tables);
-                $dbDumper->doNotCreateTables();
-
                 $this->clearLogTables($logs_tables);
             }
 
