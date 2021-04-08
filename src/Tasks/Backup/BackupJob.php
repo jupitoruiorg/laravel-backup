@@ -392,16 +392,16 @@ class BackupJob
                 $dbName = $key.'-database';
             }
 
+            $fileName = "{$dbName}";
+
             if (
                 $key === 'mysql_logs' && $this->getFilterMonth()
             ) {
-                $fileName = (new Carbon($this->getFilterStartDate()))->format('Y-m');
+                $this->setFilename((new Carbon($this->getFilterStartDate()))->format('Y-m') . '.zip');
             } elseif (
                 $key === 'mysql_logs' && $this->getFilterWeek()
             ) {
-                $fileName = $this->getFilterStartDate();
-            } else {
-                $fileName = "{$dbName}";
+                $this->setFilename($this->getFilterStartDate() . '.zip');
             }
 
             if ($key === 'mysql' && !$this->sanitized) {
@@ -423,7 +423,6 @@ class BackupJob
                 $dbDumper->useCompressor(new $compressor());
                 $fileName .= '.'.$dbDumper->getCompressorExtension();
             }
-
 
             $temporaryFilePath = $this->temporaryDirectory->path('db-dumps'.DIRECTORY_SEPARATOR.$fileName);
 
