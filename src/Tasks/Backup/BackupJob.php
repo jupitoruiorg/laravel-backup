@@ -21,7 +21,7 @@ use Spatie\TemporaryDirectory\TemporaryDirectory;
 
 class BackupJob
 {
-    public const FILENAME_FORMAT = 'Y-m-d-H-i-s.\z\i\p';
+    public const FILENAME_FORMAT = 'Y-m-d_h-iA.\z\i\p';
 
     /** @var \Spatie\Backup\Tasks\Backup\FileSelection */
     protected $fileSelection;
@@ -76,7 +76,7 @@ class BackupJob
     {
         $this->sanitized = true;
 
-        $this->changeFilenameWithSanitized();
+        //$this->changeFilenameWithSanitized();
 
         return $this;
     }
@@ -92,8 +92,8 @@ class BackupJob
 
         $day = Carbon::parse($filter_week);
 
-        $this->filter_start_date = $day->startOfWeek()->toDateString();
-        $this->filter_end_date = $day->endOfWeek()->toDateString();
+        $this->filter_start_date = (new Carbon($day))->subWeek()->startOfWeek()->toDateString();
+        $this->filter_end_date = (new Carbon($day))->subWeek()->endOfWeek()->toDateString();
 
         return $this;
     }
@@ -114,8 +114,9 @@ class BackupJob
 
         $day = Carbon::parse($filter_month);
 
-        $this->filter_start_date = $day->startOfMonth()->toDateString();
-        $this->filter_end_date = $day->endOfMonth()->toDateString();
+
+        $this->filter_start_date = (new Carbon($day))->subMonthNoOverflow()->startOfMonth()->toDateString();
+        $this->filter_end_date = (new Carbon($day))->subMonthNoOverflow()->endOfMonth()->toDateString();
 
         return $this;
     }
@@ -147,7 +148,7 @@ class BackupJob
         return $this->filter_end_date;
     }
 
-    protected function changeFilenameWithSanitized()
+    /*protected function changeFilenameWithSanitized()
     {
         $filename = $this->filename;
         $file_data = explode('.', $filename);
@@ -155,7 +156,7 @@ class BackupJob
         array_splice( $file_data, count($file_data) - 1, 0, $inserted );
 
         $this->filename = implode('.', $file_data);
-    }
+    }*/
 
     public function onlyDbName(array $allowedDbNames): self
     {
@@ -254,6 +255,7 @@ class BackupJob
             $zipFile = $this->createZipContainingEveryFileInManifest($manifest);
 
             $this->copyToBackupDestinations($zipFile);
+
         } catch (Exception $exception) {
             consoleOutput()->error("Backup failed because {$exception->getMessage()}.".PHP_EOL.$exception->getTraceAsString());
 
@@ -328,35 +330,13 @@ class BackupJob
      */
     protected function dumpDatabases(): array
     {
-        $logs_tables = [
-            'auth_log',
-
-            'queue_error_log',
-            'query_slow_log',
-            'gc_log_queues',
-
-            'union_logs',
-            'union_logs_items',
-            'union_logs_actions',
-            'union_logs_parents',
-            'union_logs_data_changed',
-
-            'telescope_entries',
+        $logs_tables = collect(config_ext__logs('logs_tables'))->diff([
             'telescope_monitoring',
             'telescope_entries_tags',
-
-            'z_log',
-            'z_mrp_log',
-            'z_dpth_log',
-            'z_dpj_log',
-            'z_mrp_log',
-            'z_members_log',
-            'z_reports_log',
-            'z_payments_log',
-        ];
+        ])->toArray();
 
         foreach ($logs_tables as $key => $table) {
-            if (!Schema::hasTable($table)) {
+            if (!Schema::connection('mysql_logs')->hasTable($table)) {
                 unset($logs_tables[$key]);
             }
         }
@@ -391,14 +371,6 @@ class BackupJob
                 $dbDumper->excludeTables($mysql_view_tables);
             }
 
-            if ($key === 'mysql_dump_only_logs') {
-                $dbDumper->includeTables($logs_tables);
-            }
-
-            if ($key === 'mysql_dump_without_logs') {
-                $dbDumper->excludeTables(array_merge($logs_tables, $mysql_view_tables));
-            }
-
             if ($this->getFilterWeek()) {
                 $dbDumper->setFilterWeek();
                 $dbDumper->setFilterStartDate($this->getFilterStartDate());
@@ -418,14 +390,16 @@ class BackupJob
             $dbName = $dbDumper->getDbName();
             if ($dbDumper instanceof Sqlite) {
                 $dbName = $key.'-database';
-            } else {
-                $dbName .= '-' . $key;
             }
 
-            $fileName = "{$dbType}-{$dbName}";
+            $fileName = "{$dbName}";
 
-            if ($this->sanitized) {
-                $fileName .= ".sanitized";
+            if ($key === 'mysql' && !$this->sanitized) {
+                $this->onlyBackupTo('s3_backups');
+            } elseif ($key === 'mysql' && $this->sanitized) {
+                $this->onlyBackupTo('s3_backups_sanitized');
+            } elseif ($key === 'mysql_logs') {
+                $this->onlyBackupTo('s3_backups_logs');
             }
 
             $fileName .= ".{$this->getExtension($dbDumper)}";
@@ -451,6 +425,21 @@ class BackupJob
 
             $dbDumper->dumpToFile($temporaryFilePath);
 
+            if (
+                $key === 'mysql_logs'
+                &&
+                (
+                    $this->getFilterWeek()
+                    ||
+                    $this->getFilterMonth()
+                )
+            ) {
+                $dbDumper->includeTables($logs_tables);
+                $dbDumper->doNotCreateTables();
+
+                $this->clearLogTables($logs_tables);
+            }
+
             return $temporaryFilePath;
         })->toArray();
     }
@@ -459,6 +448,7 @@ class BackupJob
     {
         $this->backupDestinations->each(function (BackupDestination $backupDestination) use ($path) {
             try {
+
                 consoleOutput()->info("Copying zip to disk named {$backupDestination->diskName()}...");
 
                 $backupDestination->write($path);
@@ -490,5 +480,23 @@ class BackupJob
         return $dbDumper instanceof MongoDb
             ? 'archive'
             : 'sql';
+    }
+
+    protected function clearLogTables(array $tables): void
+    {
+        $start_date = $this->getFilterStartDate();
+        $end_date   = $this->getFilterEndDate();
+
+        foreach ($tables as $table) {
+            DB::connection('mysql_logs')
+                ->table($table)
+                ->where(function ($query) use ($start_date, $end_date) {
+                    $query
+                        ->whereRaw('DATE(created_at) >= ?', [$start_date])
+                        ->whereRaw('DATE(created_at) <= ?', [$end_date])
+                    ;
+                })
+                ->delete();
+        }
     }
 }

@@ -31,7 +31,24 @@ class BackupDestination
 
         $this->diskName = $diskName;
 
-        $this->backupName = preg_replace('/[^a-zA-Z0-9.]/', '-', $backupName);
+        $backup_destination = '';
+        $host = gethostname();
+
+        if ($host === 'unionimpact') {
+            $backup_destination .= app()->environment()
+                . DIRECTORY_SEPARATOR
+                . explode(' ', exec('hostname -I'))[0]
+                . DIRECTORY_SEPARATOR;
+        } else {
+            $backup_destination .= app()->environment()
+                . DIRECTORY_SEPARATOR
+                . $host
+                . DIRECTORY_SEPARATOR;
+        }
+
+        $backup_destination .= preg_replace('/[^a-zA-Z0-9.]/', '-', $backupName);
+
+        $this->backupName = $backup_destination;
     }
 
     public function disk(): Filesystem
