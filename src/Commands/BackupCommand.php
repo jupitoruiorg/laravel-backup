@@ -22,6 +22,7 @@ class BackupCommand extends BaseCommand
         {--sanitized}
         {--filter-week=}
         {--filter-month=}
+        {--number-months-saving=}
     ';
 
     /** @var string */
@@ -33,6 +34,12 @@ class BackupCommand extends BaseCommand
         $start_time = microtime(true);
 
         $disableNotifications = $this->option('disable-notifications');
+        $number_of_months_saving = (int) ($this->option('number-months-saving') ?? config__uib('backup.logs.number_of_months_saving'));
+
+        if ($number_of_months_saving <= 0) {
+            $this->error('Number of months saving is <= 0.');
+            return;
+        }
 
         if ($this->option('timeout') && is_numeric($this->option('timeout'))) {
             set_time_limit((int) $this->option('timeout'));
@@ -72,6 +79,7 @@ class BackupCommand extends BaseCommand
             }
 
             if ($this->option('filter-month')) {
+                $backupJob->setNumberOfMonthsSaving($number_of_months_saving);
                 $backupJob->setFilterMonth($this->option('filter-month'));
             }
 

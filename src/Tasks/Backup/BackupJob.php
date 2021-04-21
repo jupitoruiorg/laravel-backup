@@ -56,6 +56,8 @@ class BackupJob
     /** @var null  */
     protected $filter_end_date = null;
 
+    protected $number_of_months_saving = 3;
+
     public function __construct()
     {
         $this->dontBackupFilesystem();
@@ -103,6 +105,16 @@ class BackupJob
         return $this->filter_week;
     }
 
+    public function setNumberOfMonthsSaving(int $value)
+    {
+        $this->number_of_months_saving = $value;
+    }
+
+    public function getNumberOfMonthsSaving(): int
+    {
+        return $this->number_of_months_saving;
+    }
+
     /**
      * @param $filter_month
      *
@@ -114,9 +126,8 @@ class BackupJob
 
         $day = Carbon::parse($filter_month);
 
-
-        $this->filter_start_date = (new Carbon($day))->subMonthNoOverflow()->startOfMonth()->toDateString();
-        $this->filter_end_date = (new Carbon($day))->subMonthNoOverflow()->endOfMonth()->toDateString();
+        $this->filter_start_date = (new Carbon($day))->subMonthsNoOverflow($this->getNumberOfMonthsSaving())->startOfMonth()->toDateString();
+        $this->filter_end_date = (new Carbon($day))->subMonthsNoOverflow($this->getNumberOfMonthsSaving())->endOfMonth()->toDateString();
 
         return $this;
     }
