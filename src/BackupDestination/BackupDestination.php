@@ -36,37 +36,7 @@ class BackupDestination
 
     protected function setBackupName(string $backupName)
     {
-        $backup_destination = '';
-
-        $host = gethostname();
-
-        /**
-         * If we are on DO GetCode server
-         */
-        if (!app()->environment('production') && $host === 'unionimpact') {
-            $backup_destination .= app()->environment()
-                . DIRECTORY_SEPARATOR
-                . explode(' ', exec('hostname -I'))[0]
-                . DIRECTORY_SEPARATOR;
-
-            /**
-             * If we are on local computer
-             */
-        } elseif (!app()->environment('production')) {
-            $backup_destination .= app()->environment()
-                . DIRECTORY_SEPARATOR
-                . $host
-                . DIRECTORY_SEPARATOR;
-        }
-
-        /**
-         * If we are not on live server
-         */
-        if (!app()->environment('production')) {
-            $backup_destination .= preg_replace('/[^a-zA-Z0-9.]/', '-', $backupName);
-        }
-
-        $this->backupName = $backup_destination;
+        $this->backupName = logs_backups_destination($backupName);
     }
 
     public function disk(): Filesystem
