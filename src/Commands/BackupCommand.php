@@ -36,8 +36,8 @@ class BackupCommand extends BaseCommand
         $disableNotifications = $this->option('disable-notifications');
         $number_of_months_saving = (int) ($this->option('number-months-saving') ?? config__uib('backup.logs.number_of_months_saving'));
 
-        if ($number_of_months_saving <= 0) {
-            $this->error('Number of months saving is <= 0.');
+        if ($number_of_months_saving < 0) {
+            $this->error('Number of months saving is < 0.');
             return;
         }
 

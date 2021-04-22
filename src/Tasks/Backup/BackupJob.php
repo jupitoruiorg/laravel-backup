@@ -107,7 +107,7 @@ class BackupJob
 
     public function setNumberOfMonthsSaving(int $value)
     {
-        $this->number_of_months_saving = $value;
+        $this->number_of_months_saving = $value + 1;
     }
 
     public function getNumberOfMonthsSaving(): int
