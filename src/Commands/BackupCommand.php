@@ -2,6 +2,7 @@
 
 namespace Spatie\Backup\Commands;
 
+use Carbon\Carbon;
 use Exception;
 use Khill\Duration\Duration;
 use Spatie\Backup\Events\BackupHasFailed;
@@ -78,9 +79,16 @@ class BackupCommand extends BaseCommand
                 $backupJob->setFilterWeek($this->option('filter-week'));
             }
 
-            if ($this->option('filter-month')) {
+            if ($filter_month = $this->option('filter-month')) {
+                $filter_month_carbon = Carbon::parse($filter_month);
+
+                if (!$filter_month_carbon->eq(Carbon::parse($filter_month)->firstOfMonth())) {
+                    $this->error('Filter month option is not first day of month.');
+                    return;
+                }
+
                 $backupJob->setNumberOfMonthsSaving($number_of_months_saving);
-                $backupJob->setFilterMonth($this->option('filter-month'));
+                $backupJob->setFilterMonth($filter_month);
             }
 
             if ($disableNotifications) {
