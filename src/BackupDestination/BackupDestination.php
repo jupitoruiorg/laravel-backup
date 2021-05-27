@@ -36,7 +36,7 @@ class BackupDestination
 
     protected function setBackupName(string $backupName)
     {
-        $this->backupName = logs_backups_destination($backupName);
+        $this->backupName = backups_destination($backupName);
     }
 
     public function disk(): Filesystem
