@@ -3,10 +3,13 @@
 namespace Spatie\Backup\Tasks\Backup;
 
 use Carbon\Carbon;
+use Carbon\Traits\Creator;
 use Exception;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Backup\BackupDestination\BackupDestination;
 use Spatie\Backup\Events\BackupHasFailed;
 use Spatie\Backup\Events\BackupManifestWasCreated;
@@ -220,6 +223,11 @@ class BackupJob
         $this->filename = $filename;
 
         return $this;
+    }
+
+    public function getFileName(): string
+    {
+        return $this->filename;
     }
 
     public function onlyBackupTo(string $diskName): self
@@ -498,6 +506,37 @@ class BackupJob
 
                 $this->sendNotification(new BackupWasSuccessful($backupDestination));
             } catch (Exception $exception) {
+
+                if (
+                    $backupDestination->diskName() === 's3_backups_logs'
+                    &&
+                    $this->getFilterMonth()
+                ) {
+
+                    copy($path, storage_path('files/restore/logs/' . $this->getFileName()));
+
+                    Artisan::call('logs:restore', [
+                        '--filename' => $this->getFileName(),
+                        '--type' => 'monthly',
+                        '--disk' => 'local_storage_files'
+                    ]);
+                }
+
+                if (
+                    $backupDestination->diskName() === 's3_backups_logs'
+                    &&
+                    $this->getFilterWeek()
+                ) {
+                    copy($path, storage_path('files/restore/logs/' . $this->getFileName()));
+
+                    Artisan::call('logs:restore', [
+                        '--filename' => $this->getFileName(),
+                        '--type' => 'weekly',
+                        '--disk' => 'local_storage_files'
+                    ]);
+                }
+
+
                 consoleOutput()->error("Copying zip failed because: {$exception->getMessage()}.");
 
                 $this->sendNotification(new BackupHasFailed($exception, $backupDestination ?? null));
