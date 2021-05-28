@@ -378,9 +378,7 @@ class BackupJob
                 ->pluck("Tables_in_{$db_name}")
                 ->toArray();
 
-            if ($key === 'mysql') {
-                $dbDumper->excludeTables($mysql_view_tables);
-            }
+            $dbDumper->excludeTables($mysql_view_tables);
 
             if ($this->getFilterWeek()) {
                 $dbDumper->setFilterWeek();
