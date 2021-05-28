@@ -378,8 +378,6 @@ class BackupJob
                 ->pluck("Tables_in_{$db_name}")
                 ->toArray();
 
-            $dbDumper->excludeTables($mysql_view_tables);
-
             if ($this->getFilterWeek()) {
                 $dbDumper->setFilterWeek();
                 $dbDumper->setFilterStartDate($this->getFilterStartDate());
@@ -453,6 +451,8 @@ class BackupJob
             ) {
                 $dbDumper->includeTables(array_diff($logs_tables, $mysql_view_tables));
                 $dbDumper->doNotCreateTables();
+            } else {
+                $dbDumper->excludeTables($mysql_view_tables);
             }
 
             $dbDumper->dumpToFile($temporaryFilePath);
