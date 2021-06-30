@@ -369,7 +369,7 @@ class BackupJob
                         WHERE
                             (
                                 TABLE_TYPE LIKE 'VIEW'
-                            ) 
+                            )
                             AND
                             (
                                 TABLES_IN_{$db_name} IN ('contact_agreement_view', 'follow_up_view', 'z_payments_recurring_items', 'users_report_view') OR
