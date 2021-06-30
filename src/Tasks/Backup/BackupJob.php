@@ -367,21 +367,28 @@ class BackupJob
                 DB::select("
                     SHOW FULL TABLES IN {$db_name}
                         WHERE
-                            TABLE_TYPE LIKE 'VIEW' OR
-                            TABLES_IN_{$db_name} IN ('contact_agreement_view', 'follow_up_view', 'z_payments_recurring_items', 'users_report_view') OR
-                            TABLES_IN_{$db_name} LIKE 'pt_%' OR
-                            TABLES_IN_{$db_name} LIKE 'dpth_%' OR
-                            TABLES_IN_{$db_name} LIKE 'dpj_%' OR
-                            TABLES_IN_{$db_name} LIKE 'jatc_%' OR
-                            TABLES_IN_{$db_name} LIKE 'jatce_%' OR
-                            TABLES_IN_{$db_name} LIKE 'mp_%' OR
-                            TABLES_IN_{$db_name} LIKE 'message_%' OR
-                            TABLES_IN_{$db_name} LIKE 'mrp_%' OR
-                            TABLES_IN_{$db_name} LIKE 'org_%' OR
-                            TABLES_IN_{$db_name} LIKE 'py_%' OR
-                            TABLES_IN_{$db_name} LIKE 'pp_%' OR
-                            TABLES_IN_{$db_name} LIKE 'vm_%' OR
-                            TABLES_IN_{$db_name} LIKE 'uib_%'")
+                            (
+                                TABLE_TYPE LIKE 'VIEW'
+                            ) 
+                            AND
+                            (
+                                TABLES_IN_{$db_name} IN ('contact_agreement_view', 'follow_up_view', 'z_payments_recurring_items', 'users_report_view') OR
+                                TABLES_IN_{$db_name} LIKE 'pt_%' OR
+                                TABLES_IN_{$db_name} LIKE 'dpth_%' OR
+                                TABLES_IN_{$db_name} LIKE 'dpj_%' OR
+                                TABLES_IN_{$db_name} LIKE 'jatc_%' OR
+                                TABLES_IN_{$db_name} LIKE 'jatce_%' OR
+                                TABLES_IN_{$db_name} LIKE 'mp_%' OR
+                                TABLES_IN_{$db_name} LIKE 'message_%' OR
+                                TABLES_IN_{$db_name} LIKE 'mrp_%' OR
+                                TABLES_IN_{$db_name} LIKE 'org_%' OR
+                                TABLES_IN_{$db_name} LIKE 'py_%' OR
+                                TABLES_IN_{$db_name} LIKE 'pp_%' OR
+                                TABLES_IN_{$db_name} LIKE 'vm_%' OR
+                                TABLES_IN_{$db_name} LIKE 'uib_%'
+                            )
+
+                ")
             )
                 ->pluck("Tables_in_{$db_name}")
                 ->toArray();
