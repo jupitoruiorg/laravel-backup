@@ -368,7 +368,7 @@ class BackupJob
                     SHOW FULL TABLES IN {$db_name}
                         WHERE
                             TABLE_TYPE LIKE 'VIEW' OR
-                            TABLES_IN_{$db_name} IN ('contact_agreement_view', 'follow_up_view', 'z_payments_recurring_items') OR
+                            TABLES_IN_{$db_name} IN ('contact_agreement_view', 'follow_up_view', 'z_payments_recurring_items', 'users_report_view') OR
                             TABLES_IN_{$db_name} LIKE 'pt_%' OR
                             TABLES_IN_{$db_name} LIKE 'dpth_%' OR
                             TABLES_IN_{$db_name} LIKE 'dpj_%' OR
