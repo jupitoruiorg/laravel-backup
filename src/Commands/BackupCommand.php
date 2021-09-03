@@ -101,6 +101,8 @@ class BackupCommand extends BaseCommand
 
             $duration = new Duration((int) $time_duration);
 
+            consoleOutput()->info('Filename: ' . $backupJob->getFileName());
+
             consoleOutput()->comment('Backup completed!');
             consoleOutput()->comment('Time: ' . $duration->humanize());
 
