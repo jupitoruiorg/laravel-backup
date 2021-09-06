@@ -66,7 +66,7 @@ class BackupCommand extends BaseCommand
                 $backupJob->dontBackupDatabases();
             }
 
-            if ($this->option('only-to-disk')) {
+            if ($onlyToDisk = $this->option('only-to-disk')) {
                 $backupJob->onlyBackupTo($this->option('only-to-disk'));
             }
 
@@ -106,9 +106,17 @@ class BackupCommand extends BaseCommand
 
             consoleOutput()->info('Filename: ' . $backupJob->getFileName());
 
-            if ($withLink) {
+            if (
+                $withLink
+                &&
+                (
+                    !$onlyToDisk
+                    ||
+                    $onlyToDisk === 's3'
+                )
+            ) {
                 consoleOutput()->info('Destination: ' . $backupJob->getFileDestination());
-                consoleOutput()->info('Download url: ' . s3_file_path($backupJob->getFileDestination()));
+                consoleOutput()->info('Download url: ' . lb_s3_file_path($backupJob->getFileDestination()));
             }
 
             consoleOutput()->comment('Backup completed!');
