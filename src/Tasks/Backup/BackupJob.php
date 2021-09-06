@@ -61,6 +61,8 @@ class BackupJob
 
     protected $number_of_months_saving = 3;
 
+    protected $file_destination = null;
+
     public function __construct()
     {
         $this->dontBackupFilesystem();
@@ -509,6 +511,8 @@ class BackupJob
 
                 $backupDestination->write($path);
 
+                $this->file_destination = $backupDestination->getFileDestination();
+
                 consoleOutput()->info("Successfully copied zip to disk named {$backupDestination->diskName()}.");
 
                 $this->sendNotification(new BackupWasSuccessful($backupDestination));
@@ -585,5 +589,10 @@ class BackupJob
                 })
                 ->delete();
         }
+    }
+
+    public function getFileDestination()
+    {
+        return $this->file_destination;
     }
 }

@@ -22,6 +22,8 @@ class BackupDestination
     /** @var Exception */
     public $connectionError;
 
+    public $fileDestination;
+
     /** @var null|\Spatie\Backup\BackupDestination\BackupCollection */
     protected $backupCollectionCache = null;
 
@@ -84,6 +86,7 @@ class BackupDestination
         }
 
         $destination = $this->backupName.'/'.pathinfo($file, PATHINFO_BASENAME);
+        $this->fileDestination = $this->disk->path($destination);
 
         $handle = fopen($file, 'r+');
 
@@ -180,5 +183,10 @@ class BackupDestination
         $this->backupCollectionCache = null;
 
         return $this;
+    }
+
+    public function getFileDestination()
+    {
+        return $this->fileDestination;
     }
 }

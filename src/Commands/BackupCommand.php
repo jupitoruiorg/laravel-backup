@@ -24,6 +24,7 @@ class BackupCommand extends BaseCommand
         {--filter-week=}
         {--filter-month=}
         {--number-months-saving=}
+        {--with-link}
     ';
 
     /** @var string */
@@ -45,6 +46,8 @@ class BackupCommand extends BaseCommand
         if ($this->option('timeout') && is_numeric($this->option('timeout'))) {
             set_time_limit((int) $this->option('timeout'));
         }
+
+        $withLink = $this->option('with-link');
 
         try {
             $this->guardAgainstInvalidOptions();
@@ -102,6 +105,11 @@ class BackupCommand extends BaseCommand
             $duration = new Duration((int) $time_duration);
 
             consoleOutput()->info('Filename: ' . $backupJob->getFileName());
+
+            if ($withLink) {
+                consoleOutput()->info('Destination: ' . $backupJob->getFileDestination());
+                consoleOutput()->info('Download url: ' . s3_file_path($backupJob->getFileDestination()));
+            }
 
             consoleOutput()->comment('Backup completed!');
             consoleOutput()->comment('Time: ' . $duration->humanize());
