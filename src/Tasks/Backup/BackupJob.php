@@ -387,6 +387,7 @@ class BackupJob
                                 TABLES_IN_{$db_name} LIKE 'py_%' OR
                                 TABLES_IN_{$db_name} LIKE 'pp_%' OR
                                 TABLES_IN_{$db_name} LIKE 'vm_%' OR
+                                TABLES_IN_{$db_name} LIKE 'workers_%' OR
                                 TABLES_IN_{$db_name} LIKE 'uib_%'
                             )
 
