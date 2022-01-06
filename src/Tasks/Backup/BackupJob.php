@@ -375,7 +375,6 @@ class BackupJob
                             AND
                             (
                                 TABLES_IN_{$db_name} IN ('contact_agreement_view', 'follow_up_view', 'z_payments_recurring_items', 'users_report_view') OR
-                                TABLES_IN_{$db_name} LIKE 'pt_%' OR
                                 TABLES_IN_{$db_name} LIKE 'dpth_%' OR
                                 TABLES_IN_{$db_name} LIKE 'dpj_%' OR
                                 TABLES_IN_{$db_name} LIKE 'jatc_%' OR
@@ -386,7 +385,6 @@ class BackupJob
                                 TABLES_IN_{$db_name} LIKE 'org_%' OR
                                 TABLES_IN_{$db_name} LIKE 'py_%' OR
                                 TABLES_IN_{$db_name} LIKE 'pp_%' OR
-                                TABLES_IN_{$db_name} LIKE 'vm_%' OR
                                 TABLES_IN_{$db_name} LIKE 'workers_%' OR
                                 TABLES_IN_{$db_name} LIKE 'uib_%'
                             )
