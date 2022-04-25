@@ -35,7 +35,7 @@
         "illuminate/filesystem": "^6.0|^7.0|^8.0|^9.0",
         "illuminate/notifications": "^6.0|^7.0|^8.0|^9.0",
         "illuminate/support": "^6.0|^7.0|^8.0|^9.0",
-        "league/flysystem": "^1.0.49",
+        "league/flysystem": "^3.0",
         "spatie/db-dumper": "^3.0",
         "spatie/temporary-directory": "^1.1",
         "symfony/finder": "^4.2|^5.0|^6.0"
