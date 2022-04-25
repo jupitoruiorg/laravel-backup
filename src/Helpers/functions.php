@@ -25,12 +25,12 @@ if (! function_exists('lb_s3_file_path')) {
         /**
          * Get SignerUrl.
          */
-        $cmd = Storage::disk('s3')->getAdapter()->getClient()->getCommand('GetObject', [
+        $cmd = Storage::disk('s3')->getClient()->getCommand('GetObject', [
             'Bucket' => $bucket,
             'Key'    => $filepath,
         ]);
 
-        $request = Storage::disk('s3')->getAdapter()->getClient()->createPresignedRequest($cmd, '+20 minutes');
+        $request = Storage::disk('s3')->getClient()->createPresignedRequest($cmd, '+20 minutes');
         $presignedUrl = (string) $request->getUri();
 
         return $presignedUrl;
