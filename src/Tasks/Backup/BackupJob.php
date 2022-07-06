@@ -351,7 +351,7 @@ class BackupJob
      */
     protected function dumpDatabases(): array
     {
-        $logs_tables = collect(config_ext__logs('logs_tables'))->diff([
+        $logs_tables = collect(config__logs('logs_tables'))->diff([
             'telescope_monitoring',
             'telescope_entries_tags',
         ])->toArray();
